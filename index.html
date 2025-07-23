@@ -150,7 +150,7 @@
             word-wrap: break-word;
             line-height: 1.5;
         }
-        
+
         /* Estilo para el reproductor de audio */
         .message-content audio {
             margin-top: 12px;
@@ -443,7 +443,7 @@
         constructor() {
             // URL del webhook de PRODUCCIÓN de n8n
             this.webhookUrl = 'https://lloquiboby.app.n8n.cloud/webhook-test/79cdf5cc-5db9-4151-8577-88a6608d474a';
-            
+
             this.userId = 'session-' + Math.random().toString(36).substr(2, 9);
             this.initializeElements();
             this.initializeEventListeners();
@@ -535,8 +535,14 @@
                         this.mediaRecorder.addEventListener("dataavailable", event => this.audioChunks.push(event.data));
                         this.mediaRecorder.addEventListener("stop", async () => {
                             const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+                            // Generar URL local para reproducir el audio grabado por el usuario
+                            const userAudioUrl = URL.createObjectURL(audioBlob);
+
                             this.hideEmptyState();
-                            this.addMessage('user', '🎤 Mensaje de voz enviado');
+                            // Añadir el mensaje del usuario con el reproductor de audio
+                            // Se modificó el tipo de adjunto a { type: 'audio', src: userAudioUrl }
+                            this.addMessage('user', '🎤 Mensaje de voz enviado', { type: 'audio', src: userAudioUrl });
+
                             const reader = new FileReader();
                             reader.readAsDataURL(audioBlob);
                             reader.onloadend = async () => {
@@ -547,6 +553,8 @@
                                     file: { name: 'voice-message.webm', mimeType: 'audio/webm', data: base64String }
                                 });
                             };
+                            // Opcional: Liberar la URL del objeto después de un tiempo o cuando ya no se necesite
+                            // setTimeout(() => URL.revokeObjectURL(userAudioUrl), 60000); // Ejemplo: liberar después de 1 minuto
                         });
                     })
                     .catch(err => {
@@ -571,11 +579,11 @@
 
                 this.removeLoadingMessage(loadingId);
                 if (!response.ok) throw new Error(`Error del servidor: ${response.statusText}`);
-                
+
                 const data = await response.json();
 
                 if (data.audioData) {
-                    // Si recibimos audio en Base64...
+                    // Si recibimos audio en Base64 del asistente...
                     const textResponse = data.response || 'Respuesta de audio';
                     this.addMessage('assistant', textResponse, null, (messageEl) => {
                         const audioPlayer = document.createElement('audio');
@@ -614,7 +622,7 @@
 
         /**
          * Renderiza un mensaje en el DOM.
-         * MODIFICADA para devolver el elemento del mensaje.
+         * MODIFICADA para devolver el elemento del mensaje y manejar audios de usuario.
          */
         renderMessage(message) {
             const messageEl = document.createElement('div');
@@ -623,14 +631,23 @@
 
             const contentEl = document.createElement('div');
             contentEl.className = 'message-content';
-            
+
             const textEl = document.createElement('div');
             textEl.textContent = message.content;
             contentEl.appendChild(textEl);
 
+            // MODIFICACION AQUI: Manejar el adjunto de audio para el usuario
             if (message.attachment) {
-                const attachmentEl = this.createAttachmentElement(message.attachment);
-                contentEl.appendChild(attachmentEl);
+                if (message.attachment.type === 'audio' && message.attachment.src) {
+                    const audioPlayer = document.createElement('audio');
+                    audioPlayer.controls = true;
+                    audioPlayer.src = message.attachment.src;
+                    contentEl.appendChild(audioPlayer);
+                } else {
+                    // Esto maneja otros tipos de adjuntos (como archivos normales)
+                    const attachmentEl = this.createAttachmentElement(message.attachment);
+                    contentEl.appendChild(attachmentEl);
+                }
             }
 
             const timeEl = document.createElement('div');
