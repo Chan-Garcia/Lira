@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatApp Pro</title>
+    <style>
+        /* Variables CSS para mantenimiento fácil */
+        :root {
+            --bg-primary: #0f1419;
+            --bg-secondary: #1a1f2e;
+            --bg-tertiary: #252a3a;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --accent-color: #4f9eff;
+            --accent-hover: #3d82cc;
+            --border-color: #3a3f4f;
+            --shadow-light: rgba(79, 158, 255, 0.1);
+            --shadow-dark: rgba(0, 0, 0, 0.3);
+            --success-color: #4caf50;
+            --border-radius: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Reset y configuración base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Contenedor principal */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--bg-secondary);
+            box-shadow: 0 0 50px var(--shadow-dark);
+        }
+
+        /* Header de la aplicación */
+        .chat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 30px;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+        }
+
+        .chat-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--accent-color), #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success-color);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Área de mensajes */
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            scroll-behavior: smooth;
+        }
+
+        .messages-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .messages-container::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        .messages-container::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+        .messages-container::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-color);
+        }
+
+        /* Estilos de mensajes */
+        .message {
+            display: flex;
+            margin-bottom: 16px;
+            animation: messageSlide 0.3s ease-out;
+            opacity: 0;
+            transform: translateY(20px);
+            animation-fill-mode: forwards;
+        }
+
+        @keyframes messageSlide {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message.assistant {
+            justify-content: flex-start;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 16px 20px;
+            border-radius: var(--border-radius);
+            position: relative;
+            word-wrap: break-word;
+            line-height: 1.5;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, var(--accent-color), #0066cc);
+            color: white;
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 4px 15px var(--shadow-light);
+        }
+
+        .message.assistant .message-content {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 10px var(--shadow-dark);
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            text-align: right;
+        }
+
+        .message.assistant .message-time {
+            text-align: left;
+        }
+
+        /* Estilos para archivos adjuntos */
+        .file-attachment {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(79, 158, 255, 0.1);
+            border: 1px solid var(--accent-color);
+            border-radius: 8px;
+            margin-top: 8px;
+            transition: var(--transition);
+        }
+
+        .file-attachment:hover {
+            background: rgba(79, 158, 255, 0.15);
+        }
+
+        .file-icon {
+            font-size: 1.2rem;
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 500;
+            color: var(--accent-color);
+        }
+
+        .file-size {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Área de entrada */
+        .input-container {
+            padding: 20px 30px;
+            background: var(--bg-tertiary);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 24px;
+            padding: 8px;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px var(--shadow-light);
+        }
+
+        .message-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 1rem;
+            line-height: 1.5;
+            padding: 12px 16px;
+            resize: none;
+            max-height: 120px;
+            min-height: 44px;
+            font-family: inherit;
+        }
+
+        .message-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        /* Botones de acción */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .action-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            font-size: 1.1rem;
+            position: relative;
+        }
+
+        .action-btn:hover {
+            background: var(--border-color);
+            color: var(--text-primary);
+            transform: scale(1.05);
+        }
+
+        .action-btn:active {
+            transform: scale(0.95);
+        }
+
+        .send-btn {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .send-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .send-btn:disabled {
+            background: var(--border-color);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Input de archivo oculto */
+        .file-input {
+            display: none;
+        }
+
+        /* Estado de carga */
+        .loading {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .loading-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .loading-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            animation: loadingBounce 1.4s infinite ease-in-out;
+        }
+
+        .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes loadingBounce {
+            0%, 80%, 100% {
+                transform: scale(0);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Estado vacío */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .empty-title {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .empty-subtitle {
+            font-size: 1rem;
+            max-width: 400px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .chat-container {
+                height: 100vh;
+                border-radius: 0;
+            }
+
+            .chat-header {
+                padding: 16px 20px;
+            }
+
+            .chat-title {
+                font-size: 1.3rem;
+            }
+
+            .messages-container {
+                padding: 16px;
+            }
+
+            .message-content {
+                max-width: 85%;
+                padding: 14px 16px;
+            }
+
+            .input-container {
+                padding: 16px 20px;
+            }
+
+            .input-wrapper {
+                border-radius: 20px;
+            }
+
+            .action-btn {
+                width: 40px;
+                height: 40px;
+            }
+
+            .empty-icon {
+                font-size: 3rem;
+            }
+
+            .empty-title {
+                font-size: 1.3rem;
+            }
+
+            .empty-subtitle {
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .message-content {
+                max-width: 90%;
+                padding: 12px 14px;
+            }
+
+            .input-container {
+                padding: 12px 16px;
+            }
+
+            .action-btn {
+                width: 36px;
+                height: 36px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Header -->
+        <header class="chat-header">
+            <h1 class="chat-title">💬 ChatApp Pro</h1>
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span>En línea</span>
+            </div>
+        </header>
+
+        <!-- Área de mensajes -->
+        <main class="messages-container" id="messagesContainer">
+            <div class="empty-state" id="emptyState">
+                <div class="empty-icon">💬</div>
+                <h2 class="empty-title">¡Hola! Soy tu asistente de chat</h2>
+                <p class="empty-subtitle">Envía un mensaje, comparte un archivo o haz una pregunta para comenzar nuestra conversación.</p>
+            </div>
+        </main>
+
+        <!-- Área de entrada -->
+        <footer class="input-container">
+            <div class="input-wrapper">
+                <textarea 
+                    class="message-input" 
+                    id="messageInput" 
+                    placeholder="Escribe tu mensaje aquí..."
+                    rows="1"
+                ></textarea>
+                
+                <div class="action-buttons">
+                    <input type="file" class="file-input" id="fileInput" accept="*/*" multiple>
+                    <button class="action-btn" id="fileBtn" title="Adjuntar archivo">
+                        📎
+                    </button>
+                    <button class="action-btn" id="micBtn" title="Grabación de voz">
+                        🎤
+                    </button>
+                    <button class="action-btn send-btn" id="sendBtn" title="Enviar mensaje">
+                        ✈️
+                    </button>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        /**
+         * Aplicación de Chat Moderna
+         * Maneja la interfaz de usuario y las interacciones
+         */
+        class ChatApp {
+            constructor() {
+                this.initializeElements();
+                this.initializeEventListeners();
+                this.messages = [];
+                this.isRecording = false;
+            }
+
+            /**
+             * Inicializa las referencias a elementos del DOM
+             */
+            initializeElements() {
+                this.messagesContainer = document.getElementById('messagesContainer');
+                this.messageInput = document.getElementById('messageInput');
+                this.sendBtn = document.getElementById('sendBtn');
+                this.fileBtn = document.getElementById('fileBtn');
+                this.fileInput = document.getElementById('fileInput');
+                this.micBtn = document.getElementById('micBtn');
+                this.emptyState = document.getElementById('emptyState');
+            }
+
+            /**
+             * Configura todos los event listeners
+             */
+            initializeEventListeners() {
+                // Envío de mensajes
+                this.sendBtn.addEventListener('click', () => this.sendMessage());
+                this.messageInput.addEventListener('keydown', (e) => this.handleKeyDown(e));
+                this.messageInput.addEventListener('input', () => this.handleInputChange());
+
+                // Manejo de archivos
+                this.fileBtn.addEventListener('click', () => this.fileInput.click());
+                this.fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
+
+                // Grabación de voz (simulada)
+                this.micBtn.addEventListener('click', () => this.toggleRecording());
+
+                // Auto-resize del textarea
+                this.messageInput.addEventListener('input', () => this.autoResizeTextarea());
+            }
+
+            /**
+             * Maneja la pulsación de teclas en el input
+             */
+            handleKeyDown(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    this.sendMessage();
+                } else if (e.key === 'Enter' && e.shiftKey) {
+                    // Permite nueva línea con Shift+Enter
+                    return;
+                }
+            }
+
+            /**
+             * Maneja cambios en el input de texto
+             */
+            handleInputChange() {
+                const hasText = this.messageInput.value.trim().length > 0;
+                this.sendBtn.disabled = !hasText;
+                this.updateSendButtonState();
+            }
+
+            /**
+             * Actualiza el estado visual del botón de envío
+             */
+            updateSendButtonState() {
+                const hasText = this.messageInput.value.trim().length > 0;
+                if (hasText) {
+                    this.sendBtn.style.background = 'var(--accent-color)';
+                    this.sendBtn.style.transform = 'scale(1)';
+                } else {
+                    this.sendBtn.style.background = 'var(--border-color)';
+                }
+            }
+
+            /**
+             * Auto-redimensiona el textarea según el contenido
+             */
+            autoResizeTextarea() {
+                this.messageInput.style.height = 'auto';
+                this.messageInput.style.height = Math.min(this.messageInput.scrollHeight, 120) + 'px';
+            }
+
+            /**
+             * Envía un mensaje
+             */
+            async sendMessage() {
+                const text = this.messageInput.value.trim();
+                if (!text) return;
+
+                // Oculta el estado vacío si es visible
+                this.hideEmptyState();
+
+                // Añade el mensaje del usuario
+                this.addMessage('user', text);
+                
+                // Limpia el input
+                this.messageInput.value = '';
+                this.handleInputChange();
+                this.autoResizeTextarea();
+
+                // Simula respuesta del asistente
+                await this.simulateAssistantResponse(text);
+            }
+
+            /**
+             * Simula una respuesta del asistente
+             */
+            async simulateAssistantResponse(userMessage) {
+                // Muestra indicador de carga
+                const loadingId = this.showLoadingMessage();
+
+                // Simula tiempo de respuesta
+                await this.delay(1000 + Math.random() * 2000);
+
+                // Elimina el indicador de carga
+                this.removeLoadingMessage(loadingId);
+
+                // Genera respuesta simulada
+                const response = this.generateResponse(userMessage);
+                this.addMessage('assistant', response);
+            }
+
+            /**
+             * Genera una respuesta simulada basada en el mensaje del usuario
+             */
+            generateResponse(userMessage) {
+                const responses = [
+                    "¡Hola! Gracias por tu mensaje. Es interesante lo que compartes.",
+                    "Entiendo tu consulta. Déjame ayudarte con eso.",
+                    "Esa es una buena pregunta. Basándome en lo que me dices...",
+                    "Perfecto, puedo ayudarte con eso. Te explico paso a paso:",
+                    "Me parece una idea muy interesante. Aquí tienes mi perspectiva:",
+                    "Claro, entiendo perfectamente. Mi recomendación sería:",
+                ];
+
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                
+                // Respuestas más específicas según el contenido
+                if (userMessage.toLowerCase().includes('hola') || userMessage.toLowerCase().includes('hello')) {
+                    return "¡Hola! 👋 Me alegra verte por aquí. ¿En qué puedo ayudarte hoy?";
+                }
+                
+                if (userMessage.toLowerCase().includes('ayuda') || userMessage.toLowerCase().includes('help')) {
+                    return "¡Por supuesto! Estoy aquí para ayudarte. Puedes preguntarme cualquier cosa, compartir archivos o simplemente conversar. ¿Qué necesitas?";
+                }
+                
+                if (userMessage.toLowerCase().includes('archivo') || userMessage.toLowerCase().includes('file')) {
+                    return "Veo que mencionas archivos. Puedes usar el botón 📎 para adjuntar documentos, imágenes, PDFs y más. ¡Estaré encantado de ayudarte con cualquier archivo que compartas!";
+                }
+
+                return randomResponse + " Si tienes más preguntas, no dudes en hacerlas.";
+            }
+
+            /**
+             * Añade un mensaje a la conversación
+             */
+            addMessage(sender, content, attachment = null) {
+                const messageId = Date.now();
+                const message = {
+                    id: messageId,
+                    sender,
+                    content,
+                    attachment,
+                    timestamp: new Date()
+                };
+
+                this.messages.push(message);
+                this.renderMessage(message);
+                this.scrollToBottom();
+            }
+
+            /**
+             * Renderiza un mensaje en el DOM
+             */
+            renderMessage(message) {
+                const messageEl = document.createElement('div');
+                messageEl.className = `message ${message.sender}`;
+                messageEl.dataset.messageId = message.id;
+
+                const contentEl = document.createElement('div');
+                contentEl.className = 'message-content';
+                
+                // Contenido del mensaje
+                const textEl = document.createElement('div');
+                textEl.textContent = message.content;
+                contentEl.appendChild(textEl);
+
+                // Archivo adjunto si existe
+                if (message.attachment) {
+                    const attachmentEl = this.createAttachmentElement(message.attachment);
+                    contentEl.appendChild(attachmentEl);
+                }
+
+                // Timestamp
+                const timeEl = document.createElement('div');
+                timeEl.className = 'message-time';
+                timeEl.textContent = this.formatTime(message.timestamp);
+                contentEl.appendChild(timeEl);
+
+                messageEl.appendChild(contentEl);
+                this.messagesContainer.appendChild(messageEl);
+            }
+
+            /**
+             * Crea elemento de archivo adjunto
+             */
+            createAttachmentElement(file) {
+                const attachmentEl = document.createElement('div');
+                attachmentEl.className = 'file-attachment';
+
+                const icon = this.getFileIcon(file.type);
+                const iconEl = document.createElement('div');
+                iconEl.className = 'file-icon';
+                iconEl.textContent = icon;
+
+                const infoEl = document.createElement('div');
+                infoEl.className = 'file-info';
+
+                const nameEl = document.createElement('div');
+                nameEl.className = 'file-name';
+                nameEl.textContent = file.name;
+
+                const sizeEl = document.createElement('div');
+                sizeEl.className = 'file-size';
+                sizeEl.textContent = this.formatFileSize(file.size);
+
+                infoEl.appendChild(nameEl);
+                infoEl.appendChild(sizeEl);
+
+                attachmentEl.appendChild(iconEl);
+                attachmentEl.appendChild(infoEl);
+
+                return attachmentEl;
+            }
+
+            /**
+             * Obtiene el icono apropiado para el tipo de archivo
+             */
+            getFileIcon(fileType) {
+                if (fileType.startsWith('image/')) return '🖼️';
+                if (fileType.includes('pdf')) return '📄';
+                if (fileType.includes('doc')) return '📝';
+                if (fileType.includes('sheet') || fileType.includes('excel')) return '📊';
+                if (fileType.startsWith('video/')) return '🎥';
+                if (fileType.startsWith('audio/')) return '🎵';
+                if (fileType.includes('zip') || fileType.includes('rar')) return '📦';
+                return '📎';
+            }
+
+            /**
+             * Formatea el tamaño del archivo
+             */
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            /**
+             * Formatea la hora del mensaje
+             */
+            formatTime(date) {
+                return date.toLocaleTimeString('es-ES', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+
+            /**
+             * Maneja la carga de archivos
+             */
+            handleFileUpload(e) {
+                const files = e.target.files;
+                if (!files.length) return;
+
+                this.hideEmptyState();
+
+                Array.from(files).forEach(file => {
+                    // Validación básica de tamaño (máximo 10MB)
+                    if (file.size > 10 * 1024 * 1024) {
+                        this.addMessage('assistant', `❌ El archivo "${file.name}" es demasiado grande. El tamaño máximo es 10MB.`);
+                        return;
+                    }
+
+                    // Añade mensaje con archivo
+                    this.addMessage('user', `He compartido un archivo:`, file);
+                    
+                    // Simula procesamiento del archivo
+                    setTimeout(() => {
+                        this.addMessage('assistant', `✅ He recibido tu archivo "${file.name}". ¡Gracias por compartirlo! ¿Hay algo específico que te gustaría que haga con él?`);
+                    }, 1000);
+                });
+
+                // Limpia el input
+                e.target.value = '';
+            }
+
+            /**
+             * Alterna la grabación de voz (simulada)
+             */
+            toggleRecording() {
+                this.isRecording = !this.isRecording;
+                
+                if (this.isRecording) {
+                    this.micBtn.style.background = '#ff4444';
+                    this.micBtn.style.color = 'white';
+                    this.micBtn.textContent = '⏹️';
+                    
+                    // Simula grabación
+                    setTimeout(() => {
+                        if (this.isRecording) {
+                            this.stopRecording();
+                        }
+                    }, 3000);
+                } else {
+                    this.stopRecording();
+                }
+            }
+
+            /**
+             * Detiene la grabación de voz
+             */
+            stopRecording() {
+                this.isRecording = false;
+                this.micBtn.style.background = 'var(--bg-tertiary)';
+                this.micBtn.style.color = 'var(--text-secondary)';
+                this.micBtn.textContent = '🎤';
+
+                // Simula mensaje de voz procesado
+                this.hideEmptyState();
+                this.addMessage('user', '🎤 Mensaje de voz (3 segundos)');
+                
+                setTimeout(() => {
+                    this.addMessage('assistant', 'He recibido tu mensaje de voz. Esta función está en desarrollo, pero pronto podré procesar audio real. ¡Gracias por probarla!');
+                }, 1000);
+            }
+
+            /**
+             * Muestra mensaje de carga
+             */
+            showLoadingMessage() {
+                const loadingId = Date.now();
+                const loadingEl = document.createElement('div');
+                loadingEl.className = 'message assistant';
+                loadingEl.dataset.messageId = loadingId;
+
+                const contentEl = document.createElement('div');
+                contentEl.className = 'message-content';
+
+                const loadingTextEl = document.createElement('div');
+                loadingTextEl.className = 'loading';
+
+                const textSpan = document.createElement('span');
+                textSpan.textContent = 'Escribiendo';
+                
+                const dotsEl = document.createElement('div');
+                dotsEl.className = 'loading-dots';
+                
+                for (let i = 0; i < 3; i++) {
+                    const dot = document.createElement('div');
+                    dot.className = 'loading-dot';
+                    dotsEl.appendChild(dot);
+                }
+
+                loadingTextEl.appendChild(textSpan);
+                loadingTextEl.appendChild(dotsEl);
+                contentEl.appendChild(loadingTextEl);
+                loadingEl.appendChild(contentEl);
+
+                this.messagesContainer.appendChild(loadingEl);
+                this.scrollToBottom();
+
+                return loadingId;
+            }
+
+            /**
+             * Elimina mensaje de carga
+             */
+            removeLoadingMessage(loadingId) {
+                const loadingEl = document.querySelector(`[data-message-id="${loadingId}"]`);
+                if (loadingEl) {
+                    loadingEl.remove();
+                }
+            }
+
+            /**
+             * Oculta el estado vacío
+             */
+            hideEmptyState() {
+                if (this.emptyState.style.display !== 'none') {
+                    this.emptyState.style.display = 'none';
+                }
+            }
+
+            /**
+             * Hace scroll al último mensaje
+             */
+            scrollToBottom() {
+                setTimeout(() => {
+                    this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+                }, 100);
+            }
+
+            /**
+             * Utilidad para delay
+             */
+            delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+        }
+
+        // Inicializa la aplicación cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', () => {
+            new ChatApp();
+        });
+
+        // Previene comportamientos por defecto en drag & drop
+        document.addEventListener('dragover', (e) => e.preventDefault());
+        document.addEventListener('drop', (e) => e.preventDefault());
+    </script>
+</body>
+</html>
