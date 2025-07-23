@@ -484,435 +484,309 @@
             </div>
         </footer>
     </div>
+<script>
+    /**
+     * Aplicación de Chat Moderna
+     * Maneja la interfaz de usuario y las interacciones con un backend de n8n.
+     */
+    class ChatApp {
+        constructor() {
+            // URL del webhook de producción de n8n
+            this.webhookUrl = 'https://lloquiboby.app.n8n.cloud/webhook/79cdf5cc-5db9-4151-8577-88a6608d474a';
+            
+            // Generar un ID de usuario único para la sesión para mantener la memoria
+            this.userId = 'session-' + Math.random().toString(36).substr(2, 9);
 
-    <script>
+            this.initializeElements();
+            this.initializeEventListeners();
+            this.messages = [];
+            this.isRecording = false;
+            this.mediaRecorder = null;
+            this.audioChunks = [];
+        }
+
         /**
-         * Aplicación de Chat Moderna
-         * Maneja la interfaz de usuario y las interacciones
+         * Inicializa las referencias a elementos del DOM
          */
-        class ChatApp {
-            constructor() {
-                this.initializeElements();
-                this.initializeEventListeners();
-                this.messages = [];
-                this.isRecording = false;
-            }
+        initializeElements() {
+            this.messagesContainer = document.getElementById('messagesContainer');
+            this.messageInput = document.getElementById('messageInput');
+            this.sendBtn = document.getElementById('sendBtn');
+            this.fileBtn = document.getElementById('fileBtn');
+            this.fileInput = document.getElementById('fileInput');
+            this.micBtn = document.getElementById('micBtn');
+            this.emptyState = document.getElementById('emptyState');
+        }
 
-            /**
-             * Inicializa las referencias a elementos del DOM
-             */
-            initializeElements() {
-                this.messagesContainer = document.getElementById('messagesContainer');
-                this.messageInput = document.getElementById('messageInput');
-                this.sendBtn = document.getElementById('sendBtn');
-                this.fileBtn = document.getElementById('fileBtn');
-                this.fileInput = document.getElementById('fileInput');
-                this.micBtn = document.getElementById('micBtn');
-                this.emptyState = document.getElementById('emptyState');
-            }
+        /**
+         * Configura todos los event listeners
+         */
+        initializeEventListeners() {
+            this.sendBtn.addEventListener('click', () => this.sendMessage());
+            this.messageInput.addEventListener('keydown', (e) => this.handleKeyDown(e));
+            this.messageInput.addEventListener('input', this.autoResizeTextarea.bind(this));
+            this.fileBtn.addEventListener('click', () => this.fileInput.click());
+            this.fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
+            this.micBtn.addEventListener('click', () => this.toggleRecording());
+        }
 
-            /**
-             * Configura todos los event listeners
-             */
-            initializeEventListeners() {
-                // Envío de mensajes
-                this.sendBtn.addEventListener('click', () => this.sendMessage());
-                this.messageInput.addEventListener('keydown', (e) => this.handleKeyDown(e));
-                this.messageInput.addEventListener('input', () => this.handleInputChange());
-
-                // Manejo de archivos
-                this.fileBtn.addEventListener('click', () => this.fileInput.click());
-                this.fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
-
-                // Grabación de voz (simulada)
-                this.micBtn.addEventListener('click', () => this.toggleRecording());
-
-                // Auto-resize del textarea
-                this.messageInput.addEventListener('input', () => this.autoResizeTextarea());
-            }
-
-            /**
-             * Maneja la pulsación de teclas en el input
-             */
-            handleKeyDown(e) {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    this.sendMessage();
-                } else if (e.key === 'Enter' && e.shiftKey) {
-                    // Permite nueva línea con Shift+Enter
-                    return;
-                }
-            }
-
-            /**
-             * Maneja cambios en el input de texto
-             */
-            handleInputChange() {
-                const hasText = this.messageInput.value.trim().length > 0;
-                this.sendBtn.disabled = !hasText;
-                this.updateSendButtonState();
-            }
-
-            /**
-             * Actualiza el estado visual del botón de envío
-             */
-            updateSendButtonState() {
-                const hasText = this.messageInput.value.trim().length > 0;
-                if (hasText) {
-                    this.sendBtn.style.background = 'var(--accent-color)';
-                    this.sendBtn.style.transform = 'scale(1)';
-                } else {
-                    this.sendBtn.style.background = 'var(--border-color)';
-                }
-            }
-
-            /**
-             * Auto-redimensiona el textarea según el contenido
-             */
-            autoResizeTextarea() {
-                this.messageInput.style.height = 'auto';
-                this.messageInput.style.height = Math.min(this.messageInput.scrollHeight, 120) + 'px';
-            }
-
-            /**
-             * Envía un mensaje
-             */
-            async sendMessage() {
-                const text = this.messageInput.value.trim();
-                if (!text) return;
-
-                // Oculta el estado vacío si es visible
-                this.hideEmptyState();
-
-                // Añade el mensaje del usuario
-                this.addMessage('user', text);
-                
-                // Limpia el input
-                this.messageInput.value = '';
-                this.handleInputChange();
-                this.autoResizeTextarea();
-
-                // Simula respuesta del asistente
-                await this.simulateAssistantResponse(text);
-            }
-
-            /**
-             * Simula una respuesta del asistente
-             */
-            async simulateAssistantResponse(userMessage) {
-                // Muestra indicador de carga
-                const loadingId = this.showLoadingMessage();
-
-                // Simula tiempo de respuesta
-                await this.delay(1000 + Math.random() * 2000);
-
-                // Elimina el indicador de carga
-                this.removeLoadingMessage(loadingId);
-
-                // Genera respuesta simulada
-                const response = this.generateResponse(userMessage);
-                this.addMessage('assistant', response);
-            }
-
-            /**
-             * Genera una respuesta simulada basada en el mensaje del usuario
-             */
-            generateResponse(userMessage) {
-                const responses = [
-                    "¡Hola! Gracias por tu mensaje. Es interesante lo que compartes.",
-                    "Entiendo tu consulta. Déjame ayudarte con eso.",
-                    "Esa es una buena pregunta. Basándome en lo que me dices...",
-                    "Perfecto, puedo ayudarte con eso. Te explico paso a paso:",
-                    "Me parece una idea muy interesante. Aquí tienes mi perspectiva:",
-                    "Claro, entiendo perfectamente. Mi recomendación sería:",
-                ];
-
-                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-                
-                // Respuestas más específicas según el contenido
-                if (userMessage.toLowerCase().includes('hola') || userMessage.toLowerCase().includes('hello')) {
-                    return "¡Hola! 👋 Me alegra verte por aquí. ¿En qué puedo ayudarte hoy?";
-                }
-                
-                if (userMessage.toLowerCase().includes('ayuda') || userMessage.toLowerCase().includes('help')) {
-                    return "¡Por supuesto! Estoy aquí para ayudarte. Puedes preguntarme cualquier cosa, compartir archivos o simplemente conversar. ¿Qué necesitas?";
-                }
-                
-                if (userMessage.toLowerCase().includes('archivo') || userMessage.toLowerCase().includes('file')) {
-                    return "Veo que mencionas archivos. Puedes usar el botón 📎 para adjuntar documentos, imágenes, PDFs y más. ¡Estaré encantado de ayudarte con cualquier archivo que compartas!";
-                }
-
-                return randomResponse + " Si tienes más preguntas, no dudes en hacerlas.";
-            }
-
-            /**
-             * Añade un mensaje a la conversación
-             */
-            addMessage(sender, content, attachment = null) {
-                const messageId = Date.now();
-                const message = {
-                    id: messageId,
-                    sender,
-                    content,
-                    attachment,
-                    timestamp: new Date()
-                };
-
-                this.messages.push(message);
-                this.renderMessage(message);
-                this.scrollToBottom();
-            }
-
-            /**
-             * Renderiza un mensaje en el DOM
-             */
-            renderMessage(message) {
-                const messageEl = document.createElement('div');
-                messageEl.className = `message ${message.sender}`;
-                messageEl.dataset.messageId = message.id;
-
-                const contentEl = document.createElement('div');
-                contentEl.className = 'message-content';
-                
-                // Contenido del mensaje
-                const textEl = document.createElement('div');
-                textEl.textContent = message.content;
-                contentEl.appendChild(textEl);
-
-                // Archivo adjunto si existe
-                if (message.attachment) {
-                    const attachmentEl = this.createAttachmentElement(message.attachment);
-                    contentEl.appendChild(attachmentEl);
-                }
-
-                // Timestamp
-                const timeEl = document.createElement('div');
-                timeEl.className = 'message-time';
-                timeEl.textContent = this.formatTime(message.timestamp);
-                contentEl.appendChild(timeEl);
-
-                messageEl.appendChild(contentEl);
-                this.messagesContainer.appendChild(messageEl);
-            }
-
-            /**
-             * Crea elemento de archivo adjunto
-             */
-            createAttachmentElement(file) {
-                const attachmentEl = document.createElement('div');
-                attachmentEl.className = 'file-attachment';
-
-                const icon = this.getFileIcon(file.type);
-                const iconEl = document.createElement('div');
-                iconEl.className = 'file-icon';
-                iconEl.textContent = icon;
-
-                const infoEl = document.createElement('div');
-                infoEl.className = 'file-info';
-
-                const nameEl = document.createElement('div');
-                nameEl.className = 'file-name';
-                nameEl.textContent = file.name;
-
-                const sizeEl = document.createElement('div');
-                sizeEl.className = 'file-size';
-                sizeEl.textContent = this.formatFileSize(file.size);
-
-                infoEl.appendChild(nameEl);
-                infoEl.appendChild(sizeEl);
-
-                attachmentEl.appendChild(iconEl);
-                attachmentEl.appendChild(infoEl);
-
-                return attachmentEl;
-            }
-
-            /**
-             * Obtiene el icono apropiado para el tipo de archivo
-             */
-            getFileIcon(fileType) {
-                if (fileType.startsWith('image/')) return '🖼️';
-                if (fileType.includes('pdf')) return '📄';
-                if (fileType.includes('doc')) return '📝';
-                if (fileType.includes('sheet') || fileType.includes('excel')) return '📊';
-                if (fileType.startsWith('video/')) return '🎥';
-                if (fileType.startsWith('audio/')) return '🎵';
-                if (fileType.includes('zip') || fileType.includes('rar')) return '📦';
-                return '📎';
-            }
-
-            /**
-             * Formatea el tamaño del archivo
-             */
-            formatFileSize(bytes) {
-                if (bytes === 0) return '0 Bytes';
-                const k = 1024;
-                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-                const i = Math.floor(Math.log(bytes) / Math.log(k));
-                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-            }
-
-            /**
-             * Formatea la hora del mensaje
-             */
-            formatTime(date) {
-                return date.toLocaleTimeString('es-ES', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-            }
-
-            /**
-             * Maneja la carga de archivos
-             */
-            handleFileUpload(e) {
-                const files = e.target.files;
-                if (!files.length) return;
-
-                this.hideEmptyState();
-
-                Array.from(files).forEach(file => {
-                    // Validación básica de tamaño (máximo 10MB)
-                    if (file.size > 10 * 1024 * 1024) {
-                        this.addMessage('assistant', `❌ El archivo "${file.name}" es demasiado grande. El tamaño máximo es 10MB.`);
-                        return;
-                    }
-
-                    // Añade mensaje con archivo
-                    this.addMessage('user', `He compartido un archivo:`, file);
-                    
-                    // Simula procesamiento del archivo
-                    setTimeout(() => {
-                        this.addMessage('assistant', `✅ He recibido tu archivo "${file.name}". ¡Gracias por compartirlo! ¿Hay algo específico que te gustaría que haga con él?`);
-                    }, 1000);
-                });
-
-                // Limpia el input
-                e.target.value = '';
-            }
-
-            /**
-             * Alterna la grabación de voz (simulada)
-             */
-            toggleRecording() {
-                this.isRecording = !this.isRecording;
-                
-                if (this.isRecording) {
-                    this.micBtn.style.background = '#ff4444';
-                    this.micBtn.style.color = 'white';
-                    this.micBtn.textContent = '⏹️';
-                    
-                    // Simula grabación
-                    setTimeout(() => {
-                        if (this.isRecording) {
-                            this.stopRecording();
-                        }
-                    }, 3000);
-                } else {
-                    this.stopRecording();
-                }
-            }
-
-            /**
-             * Detiene la grabación de voz
-             */
-            stopRecording() {
-                this.isRecording = false;
-                this.micBtn.style.background = 'var(--bg-tertiary)';
-                this.micBtn.style.color = 'var(--text-secondary)';
-                this.micBtn.textContent = '🎤';
-
-                // Simula mensaje de voz procesado
-                this.hideEmptyState();
-                this.addMessage('user', '🎤 Mensaje de voz (3 segundos)');
-                
-                setTimeout(() => {
-                    this.addMessage('assistant', 'He recibido tu mensaje de voz. Esta función está en desarrollo, pero pronto podré procesar audio real. ¡Gracias por probarla!');
-                }, 1000);
-            }
-
-            /**
-             * Muestra mensaje de carga
-             */
-            showLoadingMessage() {
-                const loadingId = Date.now();
-                const loadingEl = document.createElement('div');
-                loadingEl.className = 'message assistant';
-                loadingEl.dataset.messageId = loadingId;
-
-                const contentEl = document.createElement('div');
-                contentEl.className = 'message-content';
-
-                const loadingTextEl = document.createElement('div');
-                loadingTextEl.className = 'loading';
-
-                const textSpan = document.createElement('span');
-                textSpan.textContent = 'Escribiendo';
-                
-                const dotsEl = document.createElement('div');
-                dotsEl.className = 'loading-dots';
-                
-                for (let i = 0; i < 3; i++) {
-                    const dot = document.createElement('div');
-                    dot.className = 'loading-dot';
-                    dotsEl.appendChild(dot);
-                }
-
-                loadingTextEl.appendChild(textSpan);
-                loadingTextEl.appendChild(dotsEl);
-                contentEl.appendChild(loadingTextEl);
-                loadingEl.appendChild(contentEl);
-
-                this.messagesContainer.appendChild(loadingEl);
-                this.scrollToBottom();
-
-                return loadingId;
-            }
-
-            /**
-             * Elimina mensaje de carga
-             */
-            removeLoadingMessage(loadingId) {
-                const loadingEl = document.querySelector(`[data-message-id="${loadingId}"]`);
-                if (loadingEl) {
-                    loadingEl.remove();
-                }
-            }
-
-            /**
-             * Oculta el estado vacío
-             */
-            hideEmptyState() {
-                if (this.emptyState.style.display !== 'none') {
-                    this.emptyState.style.display = 'none';
-                }
-            }
-
-            /**
-             * Hace scroll al último mensaje
-             */
-            scrollToBottom() {
-                setTimeout(() => {
-                    this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
-                }, 100);
-            }
-
-            /**
-             * Utilidad para delay
-             */
-            delay(ms) {
-                return new Promise(resolve => setTimeout(resolve, ms));
+        handleKeyDown(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.sendMessage();
             }
         }
 
-        // Inicializa la aplicación cuando el DOM esté listo
-        document.addEventListener('DOMContentLoaded', () => {
-            new ChatApp();
-        });
+        autoResizeTextarea() {
+            this.messageInput.style.height = 'auto';
+            this.messageInput.style.height = Math.min(this.messageInput.scrollHeight, 120) + 'px';
+        }
 
-        // Previene comportamientos por defecto en drag & drop
-        document.addEventListener('dragover', (e) => e.preventDefault());
-        document.addEventListener('drop', (e) => e.preventDefault());
-    </script>
+        /**
+         * Envía un mensaje (texto, archivo o audio) al webhook de n8n.
+         */
+        async sendMessage() {
+            const text = this.messageInput.value.trim();
+            if (!text) return;
+
+            this.hideEmptyState();
+            this.addMessage('user', text);
+            this.messageInput.value = '';
+            this.autoResizeTextarea();
+
+            await this.sendToWebhook({ type: 'text', content: text });
+        }
+
+        /**
+         * Maneja la carga de archivos.
+         */
+        async handleFileUpload(e) {
+            const files = e.target.files;
+            if (!files.length) return;
+
+            this.hideEmptyState();
+
+            for (const file of Array.from(files)) {
+                if (file.size > 10 * 1024 * 1024) { // Límite de 10MB
+                    this.addMessage('assistant', `❌ El archivo "${file.name}" es demasiado grande (máx. 10MB).`);
+                    continue;
+                }
+
+                // Mostrar mensaje de archivo en la UI
+                this.addMessage('user', `Archivo adjunto: ${file.name}`, { name: file.name, size: file.size, type: file.type });
+
+                // Convertir archivo a Base64 para enviarlo
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onloadend = async () => {
+                    const base64String = reader.result.split(',')[1];
+                    await this.sendToWebhook({
+                        type: 'file',
+                        content: `Análisis del archivo: ${file.name}`,
+                        file: {
+                            name: file.name,
+                            mimeType: file.type,
+                            data: base64String
+                        }
+                    });
+                };
+            }
+            e.target.value = ''; // Limpiar el input
+        }
+
+        /**
+         * Inicia o detiene la grabación de voz.
+         */
+        toggleRecording() {
+            if (this.isRecording) {
+                this.mediaRecorder.stop();
+                this.isRecording = false;
+                this.micBtn.style.background = 'var(--bg-tertiary)';
+                this.micBtn.textContent = '🎤';
+            } else {
+                navigator.mediaDevices.getUserMedia({ audio: true })
+                    .then(stream => {
+                        this.isRecording = true;
+                        this.micBtn.style.background = '#ff4444';
+                        this.micBtn.textContent = '⏹️';
+                        this.mediaRecorder = new MediaRecorder(stream);
+                        this.mediaRecorder.start();
+                        this.audioChunks = [];
+                        this.mediaRecorder.addEventListener("dataavailable", event => {
+                            this.audioChunks.push(event.data);
+                        });
+                        this.mediaRecorder.addEventListener("stop", async () => {
+                            const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+                            
+                            this.hideEmptyState();
+                            this.addMessage('user', '🎤 Mensaje de voz enviado');
+
+                            const reader = new FileReader();
+                            reader.readAsDataURL(audioBlob);
+                            reader.onloadend = async () => {
+                                const base64String = reader.result.split(',')[1];
+                                await this.sendToWebhook({
+                                    type: 'audio',
+                                    content: 'Transcripción del audio',
+                                    file: {
+                                        name: 'voice-message.webm',
+                                        mimeType: 'audio/webm',
+                                        data: base64String
+                                    }
+                                });
+                            };
+                        });
+                    })
+                    .catch(err => {
+                        console.error("Error al acceder al micrófono:", err);
+                        this.addMessage('assistant', '❌ No pude acceder al micrófono. Por favor, verifica los permisos.');
+                    });
+            }
+        }
+
+        /**
+         * Función central para enviar datos al webhook y recibir la respuesta.
+         */
+        async sendToWebhook(payload) {
+            const loadingId = this.showLoadingMessage();
+
+            try {
+                const response = await fetch(this.webhookUrl, {
+                    method: 'POST',
+                    body: JSON.stringify({ ...payload, userId: this.userId }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                this.removeLoadingMessage(loadingId);
+
+                if (!response.ok) {
+                    throw new Error(`Error en la respuesta del servidor: ${response.statusText}`);
+                }
+
+                // El webhook de n8n debe devolver un JSON con una propiedad "response"
+                const data = await response.json();
+                
+                // Asumiendo que n8n devuelve { "response": "Texto de la IA" }
+                // O { "response": "Texto de la IA", "type": "audio", "audioUrl": "URL_DEL_AUDIO" }
+                if (data.response) {
+                    this.addMessage('assistant', data.response);
+                } else {
+                   this.addMessage('assistant', 'Recibí una respuesta, pero no tiene el formato esperado.');
+                }
+
+            } catch (error) {
+                console.error('Error al enviar al webhook:', error);
+                this.removeLoadingMessage(loadingId);
+                this.addMessage('assistant', 'Lo siento, no pude procesar tu solicitud. Inténtalo de nuevo más tarde.');
+            }
+        }
+
+        // --- El resto de las funciones para renderizar la UI permanecen casi iguales ---
+
+        addMessage(sender, content, attachment = null) {
+            const messageId = Date.now();
+            const message = { id: messageId, sender, content, attachment, timestamp: new Date() };
+            this.renderMessage(message);
+            this.scrollToBottom();
+        }
+
+        renderMessage(message) {
+            const messageEl = document.createElement('div');
+            messageEl.className = `message ${message.sender}`;
+            messageEl.dataset.messageId = message.id;
+
+            const contentEl = document.createElement('div');
+            contentEl.className = 'message-content';
+            
+            const textEl = document.createElement('div');
+            textEl.textContent = message.content;
+            contentEl.appendChild(textEl);
+
+            if (message.attachment) {
+                const attachmentEl = this.createAttachmentElement(message.attachment);
+                contentEl.appendChild(attachmentEl);
+            }
+
+            const timeEl = document.createElement('div');
+            timeEl.className = 'message-time';
+            timeEl.textContent = this.formatTime(message.timestamp);
+            contentEl.appendChild(timeEl);
+
+            messageEl.appendChild(contentEl);
+            this.messagesContainer.appendChild(messageEl);
+        }
+
+        createAttachmentElement(file) {
+            const attachmentEl = document.createElement('div');
+            attachmentEl.className = 'file-attachment';
+            const icon = this.getFileIcon(file.type);
+            attachmentEl.innerHTML = `<div class="file-icon">${icon}</div>
+                <div class="file-info">
+                    <div class="file-name">${file.name}</div>
+                    <div class="file-size">${this.formatFileSize(file.size)}</div>
+                </div>`;
+            return attachmentEl;
+        }
+
+        getFileIcon(fileType = '') {
+            if (fileType.startsWith('image/')) return '🖼️';
+            if (fileType.includes('pdf')) return '📄';
+            if (fileType.startsWith('audio/')) return '🎵';
+            return '📎';
+        }
+
+        formatFileSize(bytes = 0) {
+            if (bytes === 0) return '';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        formatTime(date) {
+            return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        showLoadingMessage() {
+            const loadingId = Date.now();
+            const loadingEl = document.createElement('div');
+            loadingEl.className = 'message assistant';
+            loadingEl.dataset.messageId = loadingId;
+            loadingEl.innerHTML = `<div class="message-content">
+                <div class="loading">
+                    <span>Escribiendo</span>
+                    <div class="loading-dots">
+                        <div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div>
+                    </div>
+                </div>
+            </div>`;
+            this.messagesContainer.appendChild(loadingEl);
+            this.scrollToBottom();
+            return loadingId;
+        }
+
+        removeLoadingMessage(loadingId) {
+            const loadingEl = document.querySelector(`[data-message-id="${loadingId}"]`);
+            if (loadingEl) loadingEl.remove();
+        }
+
+        hideEmptyState() {
+            if (this.emptyState.style.display !== 'none') {
+                this.emptyState.style.display = 'none';
+            }
+        }
+
+        scrollToBottom() {
+            this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        new ChatApp();
+    });
+</script>
+   
 </body>
 </html>
