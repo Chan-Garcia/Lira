@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIRA - Asistente IA</title> <!-- Título más descriptivo -->
+    <title>LIRA - Asistente IA</title>
     <style>
         /* Variables CSS para mantenimiento fácil */
         :root {
@@ -279,7 +279,7 @@
             padding-left: 5px; /* Ajuste para que se vea mejor */
         }
 
-        /* Estilos para archivos adjuntos */
+        /* Estilos para archivos adjuntos (se mantienen las reglas por si se añaden de nuevo otros tipos) */
         .file-attachment {
             display: flex;
             align-items: center;
@@ -298,6 +298,10 @@
 
         .file-icon {
             font-size: 1.3rem; /* Un poco más grande */
+        }
+
+        .file-info {
+            flex: 1;
         }
 
         .file-name {
@@ -425,10 +429,8 @@
             box-shadow: none;
         }
 
-        /* Input de archivo oculto */
-        .file-input {
-            display: none;
-        }
+        /* Input de archivo oculto (Regla CSS ya no es estrictamente necesaria si el elemento se elimina) */
+        /* .file-input { display: none; } */
 
         /* Estado de carga */
         .loading {
@@ -571,7 +573,7 @@
 <body>
     <div class="chat-container">
         <header class="chat-header">
-            <h1 class="chat-title"><span class="icon">🤖</span> LIRA - Asistente IA</h1> <!-- Icono para el título -->
+            <h1 class="chat-title"><span class="icon">🤖</span> LIRA - Asistente IA</h1>
             <div class="status-indicator">
                 <div class="status-dot"></div>
                 <span>En línea</span>
@@ -580,9 +582,9 @@
 
         <main class="messages-container" id="messagesContainer">
             <div class="empty-state" id="emptyState">
-                <div class="empty-icon">👋</div> <!-- Icono más amigable -->
+                <div class="empty-icon">👋</div>
                 <h2 class="empty-title">¡Hola! Soy LIRA, tu asistente virtual.</h2>
-                <p class="empty-subtitle">Estoy aquí para ayudarte. Puedes enviarme un mensaje de texto, un archivo, o incluso un mensaje de voz para comenzar nuestra conversación.</p>
+                <p class="empty-subtitle">Estoy aquí para ayudarte. Puedes enviarme un mensaje de texto, o un mensaje de voz para comenzar nuestra conversación.</p>
             </div>
         </main>
 
@@ -590,8 +592,10 @@
             <div class="input-wrapper">
                 <textarea class="message-input" id="messageInput" placeholder="Escribe tu mensaje aquí..." rows="1"></textarea>
                 <div class="action-buttons">
-                    <input type="file" class="file-input" id="fileInput" accept="*/*" multiple>
-                    <button class="action-btn" id="fileBtn" title="Adjuntar archivo">📎</button>
+                    <!-- Eliminado el input de tipo file -->
+                    <!-- <input type="file" class="file-input" id="fileInput" accept="*/*" multiple> -->
+                    <!-- Eliminado el botón de adjuntar archivo -->
+                    <!-- <button class="action-btn" id="fileBtn" title="Adjuntar archivo">📎</button> -->
                     <button class="action-btn" id="micBtn" title="Grabación de voz">🎤</button>
                     <button class="action-btn send-btn" id="sendBtn" title="Enviar mensaje">✈️</button>
                 </div>
@@ -603,6 +607,7 @@
      * Aplicación de Chat Moderna v2.1 (Mejoras UI)
      * Maneja la interfaz de usuario y las interacciones con un backend de n8n.
      * Incluye soporte para respuestas de audio y mejoras visuales.
+     * Botón de adjuntar archivo removido.
      */
     class ChatApp {
         constructor() {
@@ -622,8 +627,7 @@
             this.messagesContainer = document.getElementById('messagesContainer');
             this.messageInput = document.getElementById('messageInput');
             this.sendBtn = document.getElementById('sendBtn');
-            this.fileBtn = document.getElementById('fileBtn');
-            this.fileInput = document.getElementById('fileInput');
+            // Eliminado this.fileBtn y this.fileInput
             this.micBtn = document.getElementById('micBtn');
             this.emptyState = document.getElementById('emptyState');
         }
@@ -632,8 +636,7 @@
             this.sendBtn.addEventListener('click', () => this.sendMessage());
             this.messageInput.addEventListener('keydown', (e) => this.handleKeyDown(e));
             this.messageInput.addEventListener('input', this.autoResizeTextarea.bind(this));
-            this.fileBtn.addEventListener('click', () => this.fileInput.click());
-            this.fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
+            // Eliminado fileBtn.addEventListener y fileInput.addEventListener
             this.micBtn.addEventListener('click', () => this.toggleRecording());
         }
 
@@ -646,7 +649,7 @@
 
         autoResizeTextarea() {
             this.messageInput.style.height = 'auto';
-            this.messageInput.style.height = Math.min(this.messageInput.scrollHeight, 100) + 'px'; // Altura máxima ajustada
+            this.messageInput.style.height = Math.min(this.messageInput.scrollHeight, 100) + 'px';
         }
 
         async sendMessage() {
@@ -659,6 +662,8 @@
             await this.sendToWebhook({ type: 'text', content: text });
         }
 
+        // Eliminada completamente la función handleFileUpload
+        /*
         async handleFileUpload(e) {
             const files = e.target.files;
             if (!files.length) return;
@@ -682,25 +687,25 @@
             }
             e.target.value = '';
         }
+        */
 
         toggleRecording() {
             if (this.isRecording) {
                 this.mediaRecorder.stop();
                 this.isRecording = false;
-                this.micBtn.classList.remove('mic-recording'); // Quita la clase de grabación
+                this.micBtn.classList.remove('mic-recording');
                 this.micBtn.textContent = '🎤';
             } else {
                 navigator.mediaDevices.getUserMedia({ audio: true })
                     .then(stream => {
                         this.isRecording = true;
-                        this.micBtn.classList.add('mic-recording'); // Añade la clase de grabación
+                        this.micBtn.classList.add('mic-recording');
                         this.micBtn.textContent = '⏹️';
                         this.mediaRecorder = new MediaRecorder(stream);
                         this.mediaRecorder.start();
                         this.audioChunks = [];
                         this.mediaRecorder.addEventListener("dataavailable", event => this.audioChunks.push(event.data));
                         this.mediaRecorder.addEventListener("stop", async () => {
-                            // Detener todas las pistas de la transmisión para liberar el micrófono
                             stream.getTracks().forEach(track => track.stop());
 
                             const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
@@ -724,7 +729,7 @@
                     .catch(err => {
                         console.error("Error al acceder al micrófono:", err);
                         this.addMessage('assistant', '❌ No pude acceder al micrófono. Por favor, verifica los permisos.');
-                        this.micBtn.classList.remove('mic-recording'); // Quita la clase si hay error
+                        this.micBtn.classList.remove('mic-recording');
                         this.micBtn.textContent = '🎤';
                     });
             }
@@ -776,19 +781,17 @@
             this.scrollToBottom();
         }
 
-        // MODIFICADA para incluir avatares
         renderMessage(message) {
             const messageEl = document.createElement('div');
             messageEl.className = `message ${message.sender}`;
             messageEl.dataset.messageId = message.id;
 
-            // Crear y añadir el avatar
             const avatarEl = document.createElement('div');
             avatarEl.className = 'avatar';
             if (message.sender === 'assistant') {
-                avatarEl.innerHTML = '🤖'; // Icono para el asistente
+                avatarEl.innerHTML = '🤖';
             } else {
-                avatarEl.innerHTML = '👤'; // Icono para el usuario
+                avatarEl.innerHTML = '👤';
             }
             messageEl.appendChild(avatarEl);
 
@@ -806,6 +809,8 @@
                     audioPlayer.src = message.attachment.src;
                     contentEl.appendChild(audioPlayer);
                 } else {
+                    // La lógica para archivos adjuntos que no sean audio se mantiene aquí,
+                    // pero dado que el botón fue removido, esta parte no se activará a menos que la reintroduzcas.
                     const attachmentEl = this.createAttachmentElement(message.attachment);
                     contentEl.appendChild(attachmentEl);
                 }
@@ -822,6 +827,7 @@
             return messageEl;
         }
 
+        // Se mantiene la función createAttachmentElement por si en el futuro se quiere añadir otro tipo de adjuntos.
         createAttachmentElement(file) {
             const attachmentEl = document.createElement('div');
             attachmentEl.className = 'file-attachment';
@@ -859,7 +865,7 @@
             loadingEl.className = 'message assistant';
             loadingEl.dataset.messageId = loadingId;
             loadingEl.innerHTML = `
-                <div class="avatar">🤖</div> <!-- Avatar para el mensaje de carga -->
+                <div class="avatar">🤖</div>
                 <div class="message-content">
                     <div class="loading">
                         <span>Escribiendo</span>
