@@ -87,16 +87,12 @@
 
         .chat-title .icon {
             font-size: 1.8rem;
-            /* Elimina el color directo del acento */
-            /* color: var(--accent-color); */
-            
-            /* Restaura el color inicial del emoji y evita que el gradiente lo afecte */
-            color: initial; /* Permite que el navegador muestre el color nativo del emoji */
-            -webkit-text-fill-color: initial; /* Anula el color de relleno transparente del padre */
-            background-clip: unset; /* Asegura que el recorte de fondo no se aplique */
+            color: initial;
+            -webkit-text-fill-color: initial;
+            background-clip: unset;
             -webkit-background-clip: unset;
-            background: none; /* Elimina cualquier fondo aplicado que pueda interferir */
-            text-shadow: none; /* Elimina cualquier sombra de texto que pueda interferir */
+            background: none;
+            text-shadow: none;
         }
 
         .status-indicator {
@@ -438,9 +434,6 @@
             box-shadow: none;
         }
 
-        /* Input de archivo oculto (Regla CSS ya no es estrictamente necesaria si el elemento se elimina) */
-        /* .file-input { display: none; } */
-
         /* Estado de carga */
         .loading {
             display: flex;
@@ -522,6 +515,40 @@
             opacity: 0.8;
         }
 
+        /* --- NUEVOS ESTILOS PARA SUGERENCIAS --- */
+        .prompt-starters {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 35px;
+            max-width: 90%;
+            animation: fadeInScale 1s 0.2s ease-out forwards;
+            opacity: 0;
+        }
+
+        .prompt-btn {
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 10px 18px;
+            border-radius: 24px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .prompt-btn:hover {
+            background-color: var(--accent-color);
+            color: var(--text-primary);
+            border-color: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px var(--shadow-light);
+        }
+        /* --- FIN DE NUEVOS ESTILOS --- */
+
+
         /* Recording Indicator for Mic Button */
         .mic-recording {
             animation: micRecordingPulse 1.2s infinite ease-in-out;
@@ -562,6 +589,7 @@
             .empty-icon { font-size: 4rem; margin-bottom: 20px;}
             .empty-title { font-size: 1.5rem; }
             .empty-subtitle { font-size: 0.9rem; max-width: 300px; }
+            .prompt-btn { padding: 8px 14px; font-size: 0.8rem; }
         }
 
         @media (max-width: 480px) {
@@ -594,6 +622,15 @@
                 <div class="empty-icon">👋</div>
                 <h2 class="empty-title">¡Hola! Soy LIRA, tu asistente virtual.</h2>
                 <p class="empty-subtitle">Estoy aquí para ayudarte. Puedes enviarme un mensaje de texto, o un mensaje de voz para comenzar nuestra conversación.</p>
+                
+                <!-- --- NUEVO CONTENIDO HTML --- -->
+                <div class="prompt-starters">
+                    <button class="prompt-btn">Cuéntame un dato curioso sobre el océano</button>
+                    <button class="prompt-btn">Escribe un poema breve sobre la luna</button>
+                    <button class="prompt-btn">Explícame qué son los agujeros negros</button>
+                </div>
+                <!-- --- FIN DE NUEVO CONTENIDO HTML --- -->
+
             </div>
         </main>
 
@@ -601,10 +638,6 @@
             <div class="input-wrapper">
                 <textarea class="message-input" id="messageInput" placeholder="Escribe tu mensaje aquí..." rows="1"></textarea>
                 <div class="action-buttons">
-                    <!-- Eliminado el input de tipo file -->
-                    <!-- <input type="file" class="file-input" id="fileInput" accept="*/*" multiple> -->
-                    <!-- Eliminado el botón de adjuntar archivo -->
-                    <!-- <button class="action-btn" id="fileBtn" title="Adjuntar archivo">📎</button> -->
                     <button class="action-btn" id="micBtn" title="Grabación de voz">🎤</button>
                     <button class="action-btn send-btn" id="sendBtn" title="Enviar mensaje">✈️</button>
                 </div>
@@ -613,17 +646,11 @@
     </div>
 <script>
     /**
-     * Aplicación de Chat Moderna v2.1 (Mejoras UI)
-     * Maneja la interfaz de usuario y las interacciones con un backend de n8n.
-     * Incluye soporte para respuestas de audio y mejoras visuales.
-     * Botón de adjuntar archivo removido.
+     * Aplicación de Chat Moderna v2.2 (Sugerencias de Inicio)
      */
     class ChatApp {
         constructor() {
-            // URL del webhook de PRODUCCIÓN de n8n
-            this.webhookUrl = 'https://lloquiboby.app.n8n.cloud/webhook/79cdf5cc-5db9-4151-8577-88a6608d474a'; //produccion
-            //this.webhookUrl = 'https://lloquiboby.app.n8n.cloud/webhook-test/79cdf5cc-5db9-4151-8577-88a6608d474a'; //test
-
+            this.webhookUrl = 'https://lloquiboby.app.n8n.cloud/webhook/79cdf5cc-5db9-4151-8577-88a6608d474a';
             this.userId = 'session-' + Math.random().toString(36).substr(2, 9);
             this.initializeElements();
             this.initializeEventListeners();
@@ -636,7 +663,6 @@
             this.messagesContainer = document.getElementById('messagesContainer');
             this.messageInput = document.getElementById('messageInput');
             this.sendBtn = document.getElementById('sendBtn');
-            // Eliminado this.fileBtn y this.fileInput
             this.micBtn = document.getElementById('micBtn');
             this.emptyState = document.getElementById('emptyState');
         }
@@ -645,8 +671,17 @@
             this.sendBtn.addEventListener('click', () => this.sendMessage());
             this.messageInput.addEventListener('keydown', (e) => this.handleKeyDown(e));
             this.messageInput.addEventListener('input', this.autoResizeTextarea.bind(this));
-            // Eliminado fileBtn.addEventListener y fileInput.addEventListener
             this.micBtn.addEventListener('click', () => this.toggleRecording());
+
+            // --- NUEVO CÓDIGO JAVASCRIPT ---
+            document.querySelectorAll('.prompt-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    const promptText = button.textContent;
+                    this.messageInput.value = promptText;
+                    this.sendMessage();
+                });
+            });
+            // --- FIN DE NUEVO CÓDIGO JAVASCRIPT ---
         }
 
         handleKeyDown(e) {
@@ -670,34 +705,7 @@
             this.autoResizeTextarea();
             await this.sendToWebhook({ type: 'text', content: text });
         }
-
-        // Eliminada completamente la función handleFileUpload
-        /*
-        async handleFileUpload(e) {
-            const files = e.target.files;
-            if (!files.length) return;
-            this.hideEmptyState();
-            for (const file of Array.from(files)) {
-                if (file.size > 10 * 1024 * 1024) {
-                    this.addMessage('assistant', `❌ El archivo "${file.name}" es demasiado grande (máx. 10MB).`);
-                    continue;
-                }
-                this.addMessage('user', `Archivo adjunto: ${file.name}`, { name: file.name, size: file.size, type: file.type });
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onloadend = async () => {
-                    const base64String = reader.result.split(',')[1];
-                    await this.sendToWebhook({
-                        type: 'file',
-                        content: `Análisis del archivo: ${file.name}`,
-                        file: { name: file.name, mimeType: file.type, data: base64String }
-                    });
-                };
-            }
-            e.target.value = '';
-        }
-        */
-
+        
         toggleRecording() {
             if (this.isRecording) {
                 this.mediaRecorder.stop();
@@ -818,8 +826,6 @@
                     audioPlayer.src = message.attachment.src;
                     contentEl.appendChild(audioPlayer);
                 } else {
-                    // La lógica para archivos adjuntos que no sean audio se mantiene aquí,
-                    // pero dado que el botón fue removido, esta parte no se activará a menos que la reintroduzcas.
                     const attachmentEl = this.createAttachmentElement(message.attachment);
                     contentEl.appendChild(attachmentEl);
                 }
@@ -836,7 +842,6 @@
             return messageEl;
         }
 
-        // Se mantiene la función createAttachmentElement por si en el futuro se quiere añadir otro tipo de adjuntos.
         createAttachmentElement(file) {
             const attachmentEl = document.createElement('div');
             attachmentEl.className = 'file-attachment';
