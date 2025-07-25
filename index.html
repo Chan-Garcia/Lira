@@ -87,7 +87,16 @@
 
         .chat-title .icon {
             font-size: 1.8rem;
-            color: var(--accent-color);
+            /* Elimina el color directo del acento */
+            /* color: var(--accent-color); */
+            
+            /* Restaura el color inicial del emoji y evita que el gradiente lo afecte */
+            color: initial; /* Permite que el navegador muestre el color nativo del emoji */
+            -webkit-text-fill-color: initial; /* Anula el color de relleno transparente del padre */
+            background-clip: unset; /* Asegura que el recorte de fondo no se aplique */
+            -webkit-background-clip: unset;
+            background: none; /* Elimina cualquier fondo aplicado que pueda interferir */
+            text-shadow: none; /* Elimina cualquier sombra de texto que pueda interferir */
         }
 
         .status-indicator {
